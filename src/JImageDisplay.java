@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import  java.awt.image.BufferedImage;
 public class JImageDisplay extends JComponent{
-    private BufferedImage image;
+    public BufferedImage image;
     // конструктор принимает целочисленные значения ширины и высоты, и инициализирует объект BufferedImage
     public JImageDisplay (int width, int height){
         this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);

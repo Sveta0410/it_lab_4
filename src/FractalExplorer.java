@@ -1,4 +1,7 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
@@ -35,13 +38,22 @@ public class FractalExplorer {
         frame.setLayout(new BorderLayout()); // диспетчер компоновки
         frame.add(jImageDisplay, BorderLayout.CENTER); // отображение изображения в центре
 
+        // панель для кнопок
+        JPanel buttonPanel = new JPanel();
 
         // кнопка для сброса отображения
-        JButton button = new JButton("Reset Display");
-        frame.add(button, BorderLayout.SOUTH);
+        JButton reset = new JButton("Reset Display");
+        buttonPanel.add(reset);
+        reset.addActionListener(new buttonReset());
 
-        // обработчики нажатий на мышь
-        button.addActionListener(new buttonReset());
+        // кнопка для сохранения изображения
+        JButton save = new JButton("Save Image");
+        buttonPanel.add(save);
+        save.addActionListener(new buttonSave());
+
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+
+        // обработчик нажатий на мышь
         jImageDisplay.addMouseListener(new MouseListener());
 
         // для выбора фрактала
@@ -97,6 +109,29 @@ public class FractalExplorer {
         public void actionPerformed(ActionEvent e) {
             fractalGenerator.getInitialRange(range); //сброс диапазона к начальному
             drawFractal(); // перерисовываем фрактал
+        }
+    }
+
+    // для сохранения изображения
+    private class buttonSave implements ActionListener { // implements -> реализуем интерфейс
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JFileChooser chooser = new JFileChooser();
+            FileFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+            chooser.setFileFilter(filter);
+            // средство выбора не разрешит пользователю использование отличных от png форматов
+            chooser.setAcceptAllFileFilterUsed(false);
+
+            if (chooser.showSaveDialog(jImageDisplay) == JFileChooser.APPROVE_OPTION) {
+                try {
+                    // сохраняем
+                    ImageIO.write(jImageDisplay.image, "png", chooser.getSelectedFile());
+                } catch (Exception ee) {
+                    // выводим сообщение об ошибке
+                    JOptionPane.showMessageDialog(jImageDisplay, ee.getMessage(),
+                            "Cannot Save Image", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         }
     }
 
