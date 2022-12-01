@@ -11,6 +11,8 @@ public class FractalExplorer {
     private FractalGenerator fractalGenerator; // объект для отображения других видов фракталов в будущем
     private Rectangle2D.Double range; // объект диапазона комплексной плоскости, которая выводится на экран
 
+    private JComboBox myComboBox;
+
     //конструктор, который принимает значение размера отображения в качестве аргумента и сохраняет его
     //инициализирует объекты диапазона и фрактального генератора
     public FractalExplorer(int sizeOfDisplay){
@@ -41,6 +43,21 @@ public class FractalExplorer {
         // обработчики нажатий на мышь
         button.addActionListener(new buttonReset());
         jImageDisplay.addMouseListener(new MouseListener());
+
+        // для выбора фрактала
+        myComboBox = new JComboBox<>();
+        myComboBox.addItem(new Mandelbrot());
+        myComboBox.addItem(new Tricorn());
+        myComboBox.addItem(new BurningShip());
+
+        JPanel myPanel = new JPanel();
+        JLabel label = new JLabel("Choose fractal");
+        myPanel.add(label);
+        myPanel.add(myComboBox);
+        frame.add(myPanel, BorderLayout.NORTH);
+
+        // обработка события о взыимодействии с выпадающим списком
+        myComboBox.addActionListener(new ComboActionListener());
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // операция закрытия окна по умолчанию
 
@@ -93,6 +110,16 @@ public class FractalExplorer {
             double yCoord = FractalGenerator.getCoord (range.y, range.y + range.height, displaySize, y);
             fractalGenerator.recenterAndZoomRange(range, xCoord, yCoord, 0.5);
             drawFractal();
+        }
+    }
+
+    // обработка события о взыимодействии с выпадающим списком
+    private class ComboActionListener implements ActionListener { // implements -> реализуем интерфейс
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            fractalGenerator = (FractalGenerator) myComboBox.getSelectedItem();
+            fractalGenerator.getInitialRange(range); //сброс диапазона к начальному
+            drawFractal(); // перерисовываем фрактал
         }
     }
 }
