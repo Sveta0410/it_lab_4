@@ -79,28 +79,11 @@ public class FractalExplorer {
     }
 
     private void drawFractal(){
-        // проходим через каждый пиксель в отображении
-        for (int x = 0; x < displaySize; x++){
-            for (int y = 0; y < displaySize; y++){
-                //x - пиксельная координата; xCoord - координата в пространстве фрактала
-                double xCoord = FractalGenerator.getCoord (range.x, range.x + range.width, displaySize, x);
-                double yCoord = FractalGenerator.getCoord (range.y, range.y + range.height, displaySize, y);
-
-                //количество итераций для соответствующих координат в области отображения фрактала
-                int numIters = fractalGenerator.numIterations(xCoord, yCoord);
-
-                if (numIters == -1){
-                    // если точка не выходит за границы (число итераций == -1), красим пиксель в чёрный
-                    jImageDisplay.drawPixel(x, y, 0);
-                } else {
-                    float hue = 0.7f + (float) numIters / 200f;
-                    int rgbColor = Color.HSBtoRGB(hue, 1f, 1f);
-                    jImageDisplay.drawPixel(x, y, rgbColor);
-                }
-            }
+        // проходим через каждую строку в отображении
+        for (int i = 0; i < displaySize; i++){
+            FractalWorker row = new FractalWorker(i); // создаём отдельный рабочий объект
+            row.execute(); // запускаем фоновый поток и задачу в фоновом режиме
         }
-        // обновляем JimageDisplay в соответствии с текущим изображением
-        jImageDisplay.repaint();
     }
 
 
@@ -155,6 +138,58 @@ public class FractalExplorer {
             fractalGenerator = (FractalGenerator) myComboBox.getSelectedItem();
             fractalGenerator.getInitialRange(range); //сброс диапазона к начальному
             drawFractal(); // перерисовываем фрактал
+        }
+    }
+
+    // код для работы фрактала с несколькими фоновыми потоками
+
+    // класс для вычисление значений цвета для одной строки фрактала
+    private class FractalWorker extends SwingWorker<Object, Object>{
+        private int yCoordinate; // целочисленная y-координата вычисляемой строки
+        private int[] color; // массив для хранения вычисленных значений RGB для каждого пикселя в этой строке
+
+        public FractalWorker(int y){
+            this.yCoordinate = y;
+        }
+
+        // вызывается в фоновом потоке и отвечает за выполнение длительной задачи
+        @Override
+        public Object doInBackground(){
+            color = new int[displaySize]; // выделение памяти для массив целых чисел
+            int rgbColor;
+            // проходим через каждый пиксель в отображении
+            for (int x = 0; x < displaySize; x++){
+
+                //x - пиксельная координата; xCoord - координата в пространстве фрактала
+                double xCoord = FractalGenerator.getCoord
+                        (range.x, range.x + range.width, displaySize, x);
+                double yCoord = FractalGenerator.getCoord
+                        (range.y,range.y + range.height, displaySize, yCoordinate);
+
+                //количество итераций для соответствующих координат в области отображения фрактала
+                int numIters = fractalGenerator.numIterations(xCoord, yCoord);
+
+                if (numIters == -1){
+                    // если точка не выходит за границы (число итераций == -1), красим пиксель в чёрный
+                    rgbColor = 0;
+                } else {
+                    float hue = 0.7f + (float) numIters / 200f;
+                    rgbColor = Color.HSBtoRGB(hue, 1f, 1f);
+                }
+                color[x] = rgbColor;
+            }
+            return null;
+        }
+
+        @Override
+        public void done(){
+            // рисуем пиксели в строке
+            for (int x = 0; x < displaySize; x++) {
+                jImageDisplay.drawPixel(x, yCoordinate, color[x]);
+            }
+            // перерисовываем указанную область после того, как строка будет вычислена
+            jImageDisplay.repaint(0, 0, yCoordinate, displaySize, 1);
+
         }
     }
 }
