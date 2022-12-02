@@ -13,8 +13,10 @@ public class FractalExplorer {
     private JImageDisplay jImageDisplay; // ссылка для обновления отображения в разных методах в процессе вычисления фрактала
     private FractalGenerator fractalGenerator; // объект для отображения других видов фракталов в будущем
     private Rectangle2D.Double range; // объект диапазона комплексной плоскости, которая выводится на экран
-
     private JComboBox myComboBox;
+    private int rowsRemaining; // количество оставшихся строк, которые должны быть завершены (прорисовка)
+    private JButton reset; // кнопка сброса изображения
+    private JButton save; // кнопка сохранения изображения
 
     //конструктор, который принимает значение размера отображения в качестве аргумента и сохраняет его
     //инициализирует объекты диапазона и фрактального генератора
@@ -42,12 +44,12 @@ public class FractalExplorer {
         JPanel buttonPanel = new JPanel();
 
         // кнопка для сброса отображения
-        JButton reset = new JButton("Reset Display");
+        reset = new JButton("Reset Display");
         buttonPanel.add(reset);
         reset.addActionListener(new buttonReset());
 
         // кнопка для сохранения изображения
-        JButton save = new JButton("Save Image");
+        save = new JButton("Save Image");
         buttonPanel.add(save);
         save.addActionListener(new buttonSave());
 
@@ -79,11 +81,18 @@ public class FractalExplorer {
     }
 
     private void drawFractal(){
+        enableUI (false); // отключаем все элементы пользовательского интерфейса во время рисования
+        rowsRemaining = displaySize; // сколько строк нужно нарисовать
         // проходим через каждую строку в отображении
         for (int i = 0; i < displaySize; i++){
             FractalWorker row = new FractalWorker(i); // создаём отдельный рабочий объект
             row.execute(); // запускаем фоновый поток и задачу в фоновом режиме
         }
+    }
+    private void enableUI(boolean val) {
+        reset.setEnabled(val);
+        save.setEnabled(val);
+        myComboBox.setEnabled(val);
     }
 
 
@@ -122,6 +131,10 @@ public class FractalExplorer {
     private class MouseListener extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e){
+            // если значение rows remaining не равно нулю, сразу возвращаемся в предыдущее стстояние
+            if (rowsRemaining != 0){
+                return;
+            }
             int x = e.getX();
             int y = e.getY();
             double xCoord = FractalGenerator.getCoord (range.x, range.x + range.width, displaySize, x);
@@ -189,7 +202,10 @@ public class FractalExplorer {
             }
             // перерисовываем указанную область после того, как строка будет вычислена
             jImageDisplay.repaint(0, 0, yCoordinate, displaySize, 1);
-
+            rowsRemaining --; // уменьшаем на единицу
+            if (rowsRemaining == 0){
+                enableUI (true);
+            }
         }
     }
 }
